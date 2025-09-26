@@ -1,38 +1,73 @@
 import 'package:flutter/foundation.dart';
 
-// Simple immutable editor model
+@immutable
+class ClipModel {
+  final String id;
+  final String path; // absolute path to file
+  final int startMs; // start point inside original file (ms)
+  final int endMs; // end point inside original file (ms)
+  final int durationMs; // duration of the selected range in ms
+  final String? thumbnailPath; // cached thumbnail
+
+  const ClipModel({
+    required this.id,
+    required this.path,
+    required this.startMs,
+    required this.endMs,
+    required this.durationMs,
+    this.thumbnailPath,
+  });
+
+  ClipModel copyWith({
+    String? id,
+    String? path,
+    int? startMs,
+    int? endMs,
+    int? durationMs,
+    String? thumbnailPath,
+  }) {
+    return ClipModel(
+      id: id ?? this.id,
+      path: path ?? this.path,
+      startMs: startMs ?? this.startMs,
+      endMs: endMs ?? this.endMs,
+      durationMs: durationMs ?? this.durationMs,
+      thumbnailPath: thumbnailPath ?? this.thumbnailPath,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'path': path,
+        'startMs': startMs,
+        'endMs': endMs,
+        'durationMs': durationMs,
+        'thumbnailPath': thumbnailPath,
+      };
+}
+
 @immutable
 class EditorModel {
-  final List<String> clips;
+  final List<ClipModel> clips;
   final List<String> effects;
-  final List<List<String>> _history; // for simple undo/redo
-  final int _historyIndex;
 
   const EditorModel({
     this.clips = const [],
     this.effects = const [],
-    List<List<String>>? history,
-    int historyIndex = 0,
-  })  : _history = history ?? const [],
-        _historyIndex = historyIndex;
+  });
 
   EditorModel copyWith({
-    List<String>? clips,
+    List<ClipModel>? clips,
     List<String>? effects,
-    List<List<String>>? history,
-    int? historyIndex,
   }) {
     return EditorModel(
       clips: clips ?? this.clips,
       effects: effects ?? this.effects,
-      history: history ?? this._history,
-      historyIndex: historyIndex ?? _historyIndex,
     );
   }
 
-  // A helpful representation for sending to backend
   Map<String, dynamic> toJson() => {
-        'clips': clips,
+        'clips': clips.map((c) => c.toJson()).toList(),
         'effects': effects,
       };
 }
