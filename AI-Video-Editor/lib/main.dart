@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ai_video_editor/pages/home_page.dart';
-import 'package:ai_video_editor/pages/edit_page.dart';
-import 'package:ai_video_editor/pages/effects_page.dart';
-import 'package:ai_video_editor/pages/export_page.dart';
-import 'package:ai_video_editor/pages/profile_page.dart';
-import 'package:ai_video_editor/widgets/bottom_nav.dart';
+import 'theme/app_theme.dart';
+import 'pages/home_page.dart';
+import 'pages/edit_page.dart';
+import 'pages/effects_page.dart';
+import 'pages/export_page.dart';
+import 'pages/profile_page.dart';
+import 'widgets/animated_bottom_nav.dart';
 
 void main() {
   runApp(const ProviderScope(child: AiVideoEditorApp()));
@@ -20,18 +21,17 @@ class AiVideoEditorApp extends StatefulWidget {
 
 class _AiVideoEditorAppState extends State<AiVideoEditorApp> {
   int _selectedIndex = 0;
-
-  static final List<Widget> _pages = <Widget>[
-    const HomePage(),
-    const EditPage(),
-    const EffectsPage(),
-    const ExportPage(),
-    const ProfilePage(),
+  final List<Widget> _pages = const [
+    HomePage(),
+    EditPage(),
+    EffectsPage(),
+    ExportPage(),
+    ProfilePage(),
   ];
 
-  void _onNavTap(int index) {
+  void _onNavTap(int i) {
     setState(() {
-      _selectedIndex = index;
+      _selectedIndex = i;
     });
   }
 
@@ -39,21 +39,17 @@ class _AiVideoEditorAppState extends State<AiVideoEditorApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'AI Video Editor',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-        useMaterial3: false,
-      ),
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.darkTheme(),
       home: Scaffold(
         body: SafeArea(
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
+            duration: const Duration(milliseconds: 280),
+            transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: SlideTransition(position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(anim), child: child)),
             child: _pages[_selectedIndex],
           ),
         ),
-        bottomNavigationBar: BottomNav(
-          selectedIndex: _selectedIndex,
-          onTap: _onNavTap,
-        ),
+        bottomNavigationBar: AnimatedBottomNav(selectedIndex: _selectedIndex, onTap: _onNavTap),
       ),
     );
   }
