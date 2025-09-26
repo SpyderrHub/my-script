@@ -1,12 +1,17 @@
+// providers.dart (UPDATED)
+// Replace your existing providers.dart with this file. It adds effect application methods.
+
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'editor_state.dart';
 import 'package:uuid/uuid.dart';
 import '../services/media_service.dart';
 import '../services/ffmpeg_service.dart';
+import '../services/effects_service.dart';
 
 final mediaServiceProvider = Provider<MediaService>((ref) => MediaService());
 final ffmpegServiceProvider = Provider<FfmpegService>((ref) => FfmpegService());
+final effectsServiceProvider = Provider<EffectsService>((ref) => EffectsService());
 
 final editorProvider = StateNotifierProvider<EditorNotifier, EditorModel>((ref) {
   return EditorNotifier(ref.read);
@@ -23,7 +28,6 @@ class EditorNotifier extends StateNotifier<EditorModel> {
     final picked = await mediaService.pickMedia();
     if (picked == null || picked.isEmpty) return;
 
-    // convert picked items into ClipModel entries; do thumb generation and duration lookups
     final List<ClipModel> newClips = [];
     for (final p in picked) {
       final durationMs = await mediaService.getMediaDurationMs(p);
@@ -54,7 +58,6 @@ class EditorNotifier extends StateNotifier<EditorModel> {
     state = state.copyWith(clips: list);
   }
 
-  // Trim: replace the clip with a trimmed version (runs ffmpeg and updates path, duration, thumbnail)
   Future<void> trimClip(String id, int newStartMs, int newEndMs) async {
     final ffmpeg = read(ffmpegServiceProvider);
     final media = read(mediaServiceProvider);
@@ -80,7 +83,6 @@ class EditorNotifier extends StateNotifier<EditorModel> {
     state = state.copyWith(clips: newList);
   }
 
-  // Split clip at a timestamp (relative to clip start). Replaces original with two new clips created by ffmpeg.
   Future<void> splitClip(String id, int splitMs) async {
     final ffmpeg = read(ffmpegServiceProvider);
     final media = read(mediaServiceProvider);
@@ -92,7 +94,6 @@ class EditorNotifier extends StateNotifier<EditorModel> {
     if (splitMs <= 0 || splitMs >= clip.durationMs) return;
 
     final results = await ffmpeg.splitClip(clip.path, splitMs, clip.durationMs);
-    // results: [pathA, pathB]
     final aDur = splitMs;
     final bDur = clip.durationMs - splitMs;
 
@@ -119,6 +120,36 @@ class EditorNotifier extends StateNotifier<EditorModel> {
     final newList = List<ClipModel>.from(state.clips)
       ..removeAt(idx)
       ..insertAll(idx, [aClip, bClip]);
+    state = state.copyWith(clips: newList);
+  }
+
+  /// Apply an EffectType to a clip by id. This will:
+  /// - run FFmpeg through EffectsService to produce a new file
+  /// - generate a thumbnail for the new file
+  /// - replace the clip in the timeline with the new processed clip (new id)
+  Future<void> applyEffectToClip(String clipId, EffectType effect) async {
+    final effects = read(effectsServiceProvider);
+    final media = read(mediaServiceProvider);
+
+    final idx = state.clips.indexWhere((c) => c.id == clipId);
+    if (idx < 0) return;
+    final clip = state.clips[idx];
+
+    // Process and update state
+    final outPath = await effects.applyEffectToFile(clip.path, effect);
+    final outDur = await media.getMediaDurationMs(outPath);
+    final thumb = await media.getThumbnail(outPath, timeMs: 0);
+
+    final newClip = ClipModel(
+      id: _uuid.v4(),
+      path: outPath,
+      startMs: 0,
+      endMs: outDur,
+      durationMs: outDur,
+      thumbnailPath: thumb,
+    );
+
+    final newList = List<ClipModel>.from(state.clips)..removeAt(idx)..insert(idx, newClip);
     state = state.copyWith(clips: newList);
   }
 }
