@@ -1,24 +1,35 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import '../widgets/rounded_button.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
 
-  Widget _buildProjectTile(BuildContext context, String title, String subtitle) {
+  Widget _projectCard(BuildContext ctx, int index) {
+    final colors = [Color(0xFF6C63FF), Color(0xFF00D1FF), Color(0xFFFFC857)];
+    final rng = Random(index);
+    final color = colors[index % colors.length].withOpacity(0.12);
     return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: ListTile(
-        leading: Container(
-          width: 64,
-          height: 64,
-          color: Colors.grey.shade300,
-          child: const Icon(Icons.play_circle_outline, size: 36),
-        ),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: IconButton(
-          icon: const Icon(Icons.more_horiz),
-          onPressed: () {},
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: InkWell(
+        onTap: () {},
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(width: 84, height: 64, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.play_circle_fill, size: 36)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Project ${index + 1}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Text('Edited • ${(rng.nextInt(10) + 1)}m • ${rng.nextBool() ? 'Draft' : 'Saved'}', style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface.withOpacity(0.7))),
+                ]),
+              ),
+              RoundedButton(label: 'Open', icon: Icons.open_in_new, onPressed: () {}),
+            ],
+          ),
         ),
       ),
     );
@@ -26,47 +37,31 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Responsive grid of recent projects for wider screens
-    return LayoutBuilder(builder: (context, constraints) {
-      final isWide = constraints.maxWidth > 720;
-      return Scaffold(
-        appBar: AppBar(title: const Text('Home')),
-        body: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text('Recent Projects', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.add),
-                      label: const Text('New Project'),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: isWide
-                    ? GridView.count(
-                        crossAxisCount: 2,
-                        childAspectRatio: 3.5,
-                        children: List.generate(
-                            6, (i) => _buildProjectTile(context, 'Project ${i + 1}', 'Duration: ${i + 1}m')),
-                      )
-                    : ListView(
-                        children: List.generate(
-                            6, (i) => _buildProjectTile(context, 'Project ${i + 1}', 'Duration: ${i + 1}m')),
-                      ),
-              ),
-            ],
-          ),
+    // Responsive grid: 1 column on narrow phones, 2 on tablets
+    final width = MediaQuery.of(context).size.width;
+    final cross = width > 720 ? 2 : 1;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Home'),
+        actions: [
+          IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: GridView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cross, childAspectRatio: 3.6, crossAxisSpacing: 12, mainAxisSpacing: 12),
+          itemCount: 8,
+          itemBuilder: (context, i) => _projectCard(context, i),
         ),
-      );
-    });
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {},
+        label: const Text('New Project'),
+        icon: const Icon(Icons.add),
+      ),
+    );
   }
 }
