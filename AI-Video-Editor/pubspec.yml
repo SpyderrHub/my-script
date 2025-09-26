@@ -1,7 +1,7 @@
 name: ai_video_editor
 description: A CapCut-like AI Video Editor scaffold using Flutter + Riverpod.
 publish_to: "none"
-version: 0.1.0
+version: 0.1.1
 
 environment:
   sdk: ">=2.18.0 <3.0.0"
@@ -13,6 +13,13 @@ dependencies:
   flutter_riverpod: ^2.2.0
   http: ^0.13.6
   video_player: ^2.6.0
+
+  # New dependencies for media import, thumbnails, ffmpeg and path handling
+  file_picker: ^5.2.5
+  video_thumbnail: ^0.5.1
+  path_provider: ^2.0.15
+  ffmpeg_kit_flutter_full_gpl: ^5.1.1
+  uuid: ^4.1.0
 
 dev_dependencies:
   flutter_test:
